@@ -61,6 +61,7 @@
 
 @property (nonatomic, retain) NSArray *events;
 @property (nonatomic, copy) NSDate *currentDay;
+@property (nonatomic, retain) NSDate *beginningOfWeek;
 
 @property (nonatomic, retain) id <TKCalendarWeekTimelineViewDelegate> delegate;
 
@@ -74,6 +75,7 @@
 - (void) addSubviewDayLabels;
 - (UILabel *) dayLabel:(UILabel *)uilabel inRect:(CGRect)r;
 - (CGRect) getViewRectForDay:(int)day;
+- (NSDate*)getTimeAndDayFromPoint:(CGPoint)tapPoint;
 
 // Reload Day
 - (void)reloadDay;

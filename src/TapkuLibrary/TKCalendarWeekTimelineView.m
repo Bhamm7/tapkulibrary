@@ -69,6 +69,7 @@
 @synthesize delegate=_delegate;
 @synthesize events=_events;
 @synthesize currentDay=_currentDay;
+@synthesize beginningOfWeek=_beginningOfWeek;
 @synthesize timelineColor, is24hClock, hourColor, isFiveDayWeek;
 
 #pragma mark -
@@ -244,14 +245,11 @@
 	NSDateComponents *weekdayComponents = [gregorian components:NSWeekdayCalendarUnit fromDate:_currentDay];
 	NSDateComponents *componentsToSubtract = [[NSDateComponents alloc] init];
 	[componentsToSubtract setDay: - ([weekdayComponents weekday] - [gregorian firstWeekday] - (isFirstDayMonday? 0 : 1))];	// Default Monday as first work day
-	if (_beginningOfWeek) {
-		[_beginningOfWeek release];
-	}
-	_beginningOfWeek = [[gregorian dateByAddingComponents:componentsToSubtract toDate:_currentDay options:0] retain];
+	self.beginningOfWeek = [[gregorian dateByAddingComponents:componentsToSubtract toDate:_currentDay options:0] retain];
 	
 	NSDateFormatter *format = [[NSDateFormatter alloc]init];
 	[format setDateFormat:@"MMMM yyyy"];	
-	NSString *displayDate = [format stringFromDate:_beginningOfWeek];		// was _currentDay
+	NSString *displayDate = [format stringFromDate:self.beginningOfWeek];		// was _currentDay
 	NSDateComponents *weekComponents = [gregorian components:kCFCalendarUnitWeek fromDate:_currentDay];
 	self.monthYear.text = [NSString stringWithFormat:@"WW%d: %@",[weekComponents week],displayDate];
 	
@@ -264,18 +262,18 @@
 	 and create a new date from those components.
 	 */
 	NSDateComponents *components = [gregorian components: (NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit)
-												fromDate: _beginningOfWeek];
-	_beginningOfWeek = [gregorian dateFromComponents: components];
+												fromDate: self.beginningOfWeek];
+	self.beginningOfWeek = [gregorian dateFromComponents: components];
 
 	// Set up day labels
 	[format setDateFormat:@"EEE dd"];
-	day1.text = [format stringFromDate:_beginningOfWeek];
-	day2.text = [format stringFromDate:[_beginningOfWeek dateByAddingDays:1]];
-	day3.text = [format stringFromDate:[_beginningOfWeek dateByAddingDays:2]];
-	day4.text = [format stringFromDate:[_beginningOfWeek dateByAddingDays:3]];
-	day5.text = [format stringFromDate:[_beginningOfWeek dateByAddingDays:4]];
-	day6.text = [format stringFromDate:[_beginningOfWeek dateByAddingDays:5]];
-	day7.text = [format stringFromDate:[_beginningOfWeek dateByAddingDays:6]];
+	day1.text = [format stringFromDate:self.beginningOfWeek];
+	day2.text = [format stringFromDate:[self.beginningOfWeek dateByAddingDays:1]];
+	day3.text = [format stringFromDate:[self.beginningOfWeek dateByAddingDays:2]];
+	day4.text = [format stringFromDate:[self.beginningOfWeek dateByAddingDays:3]];
+	day5.text = [format stringFromDate:[self.beginningOfWeek dateByAddingDays:4]];
+	day6.text = [format stringFromDate:[self.beginningOfWeek dateByAddingDays:5]];
+	day7.text = [format stringFromDate:[self.beginningOfWeek dateByAddingDays:6]];
 	
 	[format release];
 	[componentsToSubtract release];
@@ -298,7 +296,7 @@
 			//starting point to check if they match
 			CGFloat startMarker = 0.0f;
 			CGFloat endMarker = 0.0f;
-			NSDate *displayDay = [_beginningOfWeek dateByAddingDays:i];
+			NSDate *displayDay = [self.beginningOfWeek dateByAddingDays:i];
 			for (TKCalendarDayEventView *event in self.events) {
 				// Making sure delgate sending date that match current day
 				if ([event.startDate isSameDay:displayDay]) {
@@ -407,7 +405,7 @@
 	[format setDateFormat:@"HH:mm"];
 	NSDate *timeTapped = [format dateFromString:[NSString stringWithFormat:@"%i:%i", intHour, intMinute]];
 	[format release];
-	return [NSDate dateWithDatePart:self.currentDay andTimePart:timeTapped];
+	return [NSDate dateWithDatePart:self.beginningOfWeek andTimePart:timeTapped];
 }
 
 - (void)tapDetectingView:(TapDetectingView *)view gotSingleTapAtPoint:(CGPoint)tapPoint
@@ -423,15 +421,24 @@
 	CGPoint pointInTimeLine = CGPointZero;
 	if (view == _timelineView) {
 		pointInTimeLine = tapPoint;
-		NSLog(@"Double Tapped TimelineView at point %@", NSStringFromCGPoint(pointInTimeLine));
+		NSLog(@"Double Tapped TimelineView at point %@ and date %@", NSStringFromCGPoint(pointInTimeLine), [self getTimeAndDayFromPoint:pointInTimeLine]);
 	}
 	else {
 		pointInTimeLine = [view convertPoint:tapPoint toView:self.scrollView];
 		NSLog(@"Double Tapped EventView at point %@", NSStringFromCGPoint(pointInTimeLine));		
 	}
 	if (self.delegate && [self.delegate respondsToSelector:@selector(calendarWeekTimelineView:eventDateWasSelected:)]) {
-		[self.delegate calendarWeekTimelineView:self eventDateWasSelected:[self getTimeFromOffset:pointInTimeLine.y]];
+		[self.delegate calendarWeekTimelineView:self eventDateWasSelected:[self getTimeAndDayFromPoint:pointInTimeLine]];
 	}
+}
+
+- (NSDate*)getTimeAndDayFromPoint:(CGPoint)tapPoint {
+	// Given tapPoint within _timeLineView, return day of the week and time
+	NSDate *selectedDay = self.beginningOfWeek;
+	for (NSInteger i=0; i<(isFiveDayWeek ? 5 : 7); i++)
+		if (CGRectContainsPoint([self getViewRectForDay:i+1],tapPoint)) 
+			selectedDay = [self.beginningOfWeek dateByAddingDays:i];	
+	return [NSDate dateWithDatePart:selectedDay andTimePart:[self getTimeFromOffset:tapPoint.y]];
 }
 
 #pragma mark -
@@ -459,13 +466,13 @@
 	return monthYear;
 }
 
--(void) nextDay:(id)sender {
-	NSDate *tomorrow = [self.currentDay dateByAddingDays:1];
+-(void) nextWeek:(id)sender {
+	NSDate *tomorrow = [self.currentDay dateByAddingDays:7];
 	self.currentDay = tomorrow;
 }
 
--(void) previousDay:(id)sender {
-	NSDate *yesterday = [self.currentDay dateByAddingDays:-1];
+-(void) previousWeek:(id)sender {
+	NSDate *yesterday = [self.currentDay dateByAddingDays:-7];
 	self.currentDay = yesterday;
 }
 
@@ -473,7 +480,7 @@
 	if(leftArrow==nil){
 		leftArrow = [[UIButton buttonWithType:UIButtonTypeCustom] retain];
 		leftArrow.tag = 0;
-		[leftArrow addTarget:self action:@selector(previousDay:) forControlEvents:UIControlEventTouchUpInside];
+		[leftArrow addTarget:self action:@selector(previousWeek:) forControlEvents:UIControlEventTouchUpInside];
 		
 		
 		
@@ -488,7 +495,7 @@
 	if(rightArrow==nil){
 		rightArrow = [[UIButton buttonWithType:UIButtonTypeCustom] retain];
 		rightArrow.tag = 1;
-		[rightArrow addTarget:self action:@selector(nextDay:) forControlEvents:UIControlEventTouchUpInside];
+		[rightArrow addTarget:self action:@selector(nextWeek:) forControlEvents:UIControlEventTouchUpInside];
 		rightArrow.frame = CGRectMake(320-45, 3, 48, 38);
 		
 		
@@ -514,6 +521,7 @@
 	[self removeObserver:self forKeyPath: @"currentDay"];
 	
 	[_currentDay release];
+	[_beginningOfWeek release];
 	[_events release];
 	[_timelineView release];
 	[_scrollView release];
