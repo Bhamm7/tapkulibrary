@@ -33,11 +33,11 @@
 
 @protocol TKCalendarWeekTimelineViewDelegate;
 
-@class TKTimelineView;
+@class TKTimelineWeekView;
 
 @interface TKCalendarWeekTimelineView : UIView <TapDetectingViewDelegate>{
 	UIScrollView *_scrollView;
-	TKTimelineView *_timelineView;
+	TKTimelineWeekView *_timelineView;
 	
 	NSArray *_events;
 	NSDate *_currentDay;
@@ -53,7 +53,7 @@
 }
 
 @property (nonatomic, readonly) UIScrollView *scrollView;
-@property (nonatomic, readonly) TKTimelineView *timelineView;
+@property (nonatomic, readonly) TKTimelineWeekView *timelineView;
 
 @property (nonatomic, retain) NSArray *events;
 @property (nonatomic, copy) NSDate *currentDay;
@@ -83,7 +83,7 @@
 
 @end
 
-@interface TKTimelineView : TapDetectingView {
+@interface TKTimelineWeekView : TapDetectingView {
 	NSArray *_times;
 	NSArray *_periods;
 	BOOL is24hClock;

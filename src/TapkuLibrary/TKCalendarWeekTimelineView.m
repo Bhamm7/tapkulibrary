@@ -143,10 +143,10 @@
 	return _scrollView;
 }
 
-- (TKTimelineView *)timelineView
+- (TKTimelineWeekView *)timelineView
 {
 	if (!_timelineView) {
-		_timelineView = [[TKTimelineView alloc]initWithFrame:CGRectMake(self.bounds.origin.x, 
+		_timelineView = [[TKTimelineWeekView alloc]initWithFrame:CGRectMake(self.bounds.origin.x, 
 																		self.bounds.origin.y,
 																		self.bounds.size.width,
 																		TIMELINE_HEIGHT)];
@@ -189,7 +189,7 @@
 	
 	// Remove all previous view event
 	for (id view in self.scrollView.subviews) {
-		if (![NSStringFromClass([view class])isEqualToString:@"TKTimelineView"]) {
+		if (![NSStringFromClass([view class])isEqualToString:@"TKTimelineWeekView"]) {
 			[view removeFromSuperview];
 		}
 	}
@@ -439,7 +439,7 @@
 
 @end
 
-@implementation TKTimelineView
+@implementation TKTimelineWeekView
 
 @synthesize times=_times;
 @synthesize periods=_periods;

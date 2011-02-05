@@ -71,6 +71,8 @@
 		3BF88F9611E57C9000C9FC43 /* ipadcover_7.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 3BF88F8D11E57C9000C9FC43 /* ipadcover_7.jpg */; };
 		3BF88F9711E57C9000C9FC43 /* ipadcover_8.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 3BF88F8E11E57C9000C9FC43 /* ipadcover_8.jpg */; };
 		3BF88F9811E57C9000C9FC43 /* ipadcover_9.jpg in Resources */ = {isa = PBXBuildFile; fileRef = 3BF88F8F11E57C9000C9FC43 /* ipadcover_9.jpg */; };
+		9106D06912FD252E005E6C90 /* TKCalendarWeekViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 9106D06512FD252E005E6C90 /* TKCalendarWeekViewController.m */; };
+		9106D06A12FD252E005E6C90 /* TKCalendarWeekTimelineView.m in Sources */ = {isa = PBXBuildFile; fileRef = 9106D06712FD252E005E6C90 /* TKCalendarWeekTimelineView.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -198,6 +200,10 @@
 		3BF88F8E11E57C9000C9FC43 /* ipadcover_8.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = ipadcover_8.jpg; sourceTree = "<group>"; };
 		3BF88F8F11E57C9000C9FC43 /* ipadcover_9.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = ipadcover_9.jpg; sourceTree = "<group>"; };
 		8D1107310486CEB800E47090 /* universaldemo-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "universaldemo-Info.plist"; plistStructureDefinitionIdentifier = "com.apple.xcode.plist.structure-definition.iphone.info-plist"; sourceTree = "<group>"; };
+		9106D06512FD252E005E6C90 /* TKCalendarWeekViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TKCalendarWeekViewController.m; path = ../src/TapkuLibrary/TKCalendarWeekViewController.m; sourceTree = SOURCE_ROOT; };
+		9106D06612FD252E005E6C90 /* TKCalendarWeekViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TKCalendarWeekViewController.h; path = ../src/TapkuLibrary/TKCalendarWeekViewController.h; sourceTree = SOURCE_ROOT; };
+		9106D06712FD252E005E6C90 /* TKCalendarWeekTimelineView.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = TKCalendarWeekTimelineView.m; path = ../src/TapkuLibrary/TKCalendarWeekTimelineView.m; sourceTree = SOURCE_ROOT; };
+		9106D06812FD252E005E6C90 /* TKCalendarWeekTimelineView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = TKCalendarWeekTimelineView.h; path = ../src/TapkuLibrary/TKCalendarWeekTimelineView.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -434,6 +440,10 @@
 			children = (
 				3BF88B8611E5468D00C9FC43 /* DemoCalendarMonth.h */,
 				3BF88B8711E5468D00C9FC43 /* DemoCalendarMonth.m */,
+				9106D06612FD252E005E6C90 /* TKCalendarWeekViewController.h */,
+				9106D06512FD252E005E6C90 /* TKCalendarWeekViewController.m */,
+				9106D06812FD252E005E6C90 /* TKCalendarWeekTimelineView.h */,
+				9106D06712FD252E005E6C90 /* TKCalendarWeekTimelineView.m */,
 			);
 			name = Calendar;
 			sourceTree = "<group>";
@@ -670,6 +680,8 @@
 				3B4EDD8C129B34F300E0C201 /* CJSONScanner.m in Sources */,
 				3B4EDD8D129B34F300E0C201 /* CJSONSerializer.m in Sources */,
 				3B4EDD8E129B34F300E0C201 /* CSerializedJSONData.m in Sources */,
+				9106D06912FD252E005E6C90 /* TKCalendarWeekViewController.m in Sources */,
+				9106D06A12FD252E005E6C90 /* TKCalendarWeekTimelineView.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

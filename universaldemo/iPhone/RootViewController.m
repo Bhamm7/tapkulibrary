@@ -42,6 +42,7 @@
 #import "MoreCellsViewController.h"
 #import "AlertsViewController.h"
 #import "ImageCenterViewController.h"
+#import "TKCalendarWeekViewController.h"
 
 @implementation RootViewController
 
@@ -131,7 +132,7 @@
 	}
 	
 	if(s==0&&r==2)
-		vc = [[DemoCalendarMonth alloc] initWithSunday:YES];
+		vc = [[TKCalendarWeekViewController alloc] init];		// [[DemoCalendarMonth alloc] initWithSunday:YES];
 
 	
 	
