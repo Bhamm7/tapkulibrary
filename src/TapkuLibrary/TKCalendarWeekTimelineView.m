@@ -33,13 +33,14 @@
 #import "UIImage+TKCategory.h"
 #import "TKGlobal.h"
 
-#define HORIZONTAL_OFFSET 3.0
+#define HORIZONTAL_OFFSET 1.0
 #define VERTICAL_OFFSET 5.0
+#define PERIOD_VERT_OFFSET 15.0
 
-#define TIME_WIDTH 20.0
-#define PERIOD_WIDTH 26.0
+#define TIME_WIDTH 12.0
+#define PERIOD_WIDTH 16.0
 
-#define FONT_SIZE 14.0
+#define FONT_SIZE 9.0
 
 #define HORIZONTAL_LINE_DIFF 10.0
 
@@ -68,7 +69,7 @@
 @synthesize delegate=_delegate;
 @synthesize events=_events;
 @synthesize currentDay=_currentDay;
-@synthesize timelineColor, is24hClock, hourColor;
+@synthesize timelineColor, is24hClock, hourColor, isFiveDayWeek;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -98,11 +99,12 @@
 	// Initialization code
 	self.events = nil;
 	self.currentDay = nil;
-	
+
 	[self addSubview:self.topBackground];
 	
 	[self addSubview:self.monthYear];
 	
+	[self addSubviewDayLabels];
 	
 	[self addSubview:self.leftArrow];
 	[self addSubview:self.rightArrow];
@@ -117,6 +119,42 @@
 	[self addObserver:self forKeyPath: @"currentDay"
 					 options:0
 					 context:@selector(reloadDay)];
+}
+
+
+- (void) addSubviewDayLabels {
+	// Add labels for days, either five or seven
+	for (NSInteger i=1; i<=(isFiveDayWeek ? 5 : 7); i++) {
+		CGRect dayLabelRect = [self getViewRectForDay:i];
+		dayLabelRect.origin.y = 30.0;
+		dayLabelRect.size.height = 15.0;
+		if (i==1) { day1 = [self dayLabel:day1 inRect:dayLabelRect]; [self addSubview:day1];}
+		if (i==2) { day2 = [self dayLabel:day2 inRect:dayLabelRect]; [self addSubview:day2];}
+		if (i==3) { day3 = [self dayLabel:day3 inRect:dayLabelRect]; [self addSubview:day3];}
+		if (i==4) { day4 = [self dayLabel:day4 inRect:dayLabelRect]; [self addSubview:day4];}
+		if (i==5) { day5 = [self dayLabel:day5 inRect:dayLabelRect]; [self addSubview:day5];}
+		if (i==6) { day6 = [self dayLabel:day6 inRect:dayLabelRect]; [self addSubview:day6];}
+		if (i==7) { day7 = [self dayLabel:day7 inRect:dayLabelRect]; [self addSubview:day7];}
+	}
+}
+
+- (CGRect) getViewRectForDay:(int)day {
+	// For gregorian day index, return view rect
+	// TODO: Not very DRY, method repeated in _timelineView
+	float weekday_width = (self.bounds.size.width - HORIZONTAL_OFFSET - TIME_WIDTH) / (isFiveDayWeek ? 5 : 7);
+	
+	return CGRectMake(HORIZONTAL_OFFSET + TIME_WIDTH + (day-1)*weekday_width, 0.0, weekday_width, self.bounds.size.height);
+}
+
+- (UILabel *) dayLabel:(UILabel *)uilabel inRect:(CGRect)r {
+	if(uilabel==nil){
+		uilabel = [[UILabel alloc] initWithFrame:r];
+		uilabel.textAlignment = UITextAlignmentCenter;
+		uilabel.backgroundColor = [UIColor clearColor];
+		uilabel.font = [UIFont boldSystemFontOfSize:8.0f];
+		uilabel.textColor = [UIColor colorWithRed:59/255. green:73/255. blue:88/255. alpha:1];
+	}
+	return uilabel;
 }
 
 #pragma mark -
@@ -152,6 +190,8 @@
 																		TIMELINE_HEIGHT)];
 		_timelineView.backgroundColor = [UIColor whiteColor];
 		_timelineView.delegate = self;		
+		_timelineView.isFiveDayWeek = self.isFiveDayWeek;
+
 		
 	}
 	return _timelineView;
@@ -163,6 +203,10 @@
 
 -(void)setIs24hClock:(BOOL)aIs24hClock {
 	_timelineView.is24hClock = aIs24hClock;
+}
+
+-(void)setIsFiveDayWeek:(BOOL)aIsFiveDayWeek {
+	_timelineView.isFiveDayWeek = aIsFiveDayWeek;
 }
 
 #pragma mark -
@@ -186,7 +230,7 @@
 		// Dont' want to inform the observer
 		_currentDay = [[NSDate date]retain];
 	}
-	
+
 	// Remove all previous view event
 	for (id view in self.scrollView.subviews) {
 		if (![NSStringFromClass([view class])isEqualToString:@"TKTimelineWeekView"]) {
@@ -194,104 +238,154 @@
 		}
 	}
 	
+	// Determine the first day of the current week
+	// From http://stackoverflow.com/questions/3519207/how-to-calculate-first-nsdate-of-current-week
+	NSCalendar *gregorian = [NSCalendar currentCalendar];
+	NSDateComponents *weekdayComponents = [gregorian components:NSWeekdayCalendarUnit fromDate:_currentDay];
+	NSDateComponents *componentsToSubtract = [[NSDateComponents alloc] init];
+	[componentsToSubtract setDay: - ([weekdayComponents weekday] - [gregorian firstWeekday] - (isFirstDayMonday? 0 : 1))];	// Default Monday as first work day
+	if (_beginningOfWeek) {
+		[_beginningOfWeek release];
+	}
+	_beginningOfWeek = [[gregorian dateByAddingComponents:componentsToSubtract toDate:_currentDay options:0] retain];
+	
 	NSDateFormatter *format = [[NSDateFormatter alloc]init];
-	[format setDateFormat:@"EEEE  dd MM yyyy"];	
-	NSString *displayDate = [format stringFromDate:_currentDay];
-	self.monthYear.text = displayDate;
+	[format setDateFormat:@"MMMM yyyy"];	
+	NSString *displayDate = [format stringFromDate:_beginningOfWeek];		// was _currentDay
+	NSDateComponents *weekComponents = [gregorian components:kCFCalendarUnitWeek fromDate:_currentDay];
+	self.monthYear.text = [NSString stringWithFormat:@"WW%d: %@",[weekComponents week],displayDate];
+	
+	
+	/*
+	 Optional step:
+	 beginningOfWeek now has the same hour, minute, and second as the
+	 original date (today).
+	 To normalize to midnight, extract the year, month, and day components
+	 and create a new date from those components.
+	 */
+	NSDateComponents *components = [gregorian components: (NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit)
+												fromDate: _beginningOfWeek];
+	_beginningOfWeek = [gregorian dateFromComponents: components];
+
+	// Set up day labels
+	[format setDateFormat:@"EEE dd"];
+	day1.text = [format stringFromDate:_beginningOfWeek];
+	day2.text = [format stringFromDate:[_beginningOfWeek dateByAddingDays:1]];
+	day3.text = [format stringFromDate:[_beginningOfWeek dateByAddingDays:2]];
+	day4.text = [format stringFromDate:[_beginningOfWeek dateByAddingDays:3]];
+	day5.text = [format stringFromDate:[_beginningOfWeek dateByAddingDays:4]];
+	day6.text = [format stringFromDate:[_beginningOfWeek dateByAddingDays:5]];
+	day7.text = [format stringFromDate:[_beginningOfWeek dateByAddingDays:6]];
+	
 	[format release];
+	[componentsToSubtract release];
+	
 	
 	// Ask the delgate about the events that correspond
 	// the the currently displayed day view
 	if (self.delegate && [self.delegate respondsToSelector:@selector(calendarWeekTimelineView:eventsForDate:)]) {
 		self.events = [self.delegate calendarWeekTimelineView:self eventsForDate:self.currentDay];
 		NSMutableArray *sameTimeEvents = [[NSMutableArray alloc] init];
-		NSInteger offsetCount = 0;
-		//number of nested appointments
-		NSInteger repeatNumber = 0;
-		//number of pixels to offset horizontally when they are nested
-		CGFloat horizOffset = 0.0f;
-		//starting point to check if they match
-		CGFloat startMarker = 0.0f;
-		CGFloat endMarker = 0.0f;
-		for (TKCalendarDayEventView *event in self.events) {
-			// Making sure delgate sending date that match current day
-			if ([event.startDate isSameDay:self.currentDay]) {
-				// Get the hour start position
-				NSInteger hourStart = [event.startDate dateInformation].hour;
-				CGFloat hourStartPosition = roundf((hourStart * VERTICAL_DIFF) + VERTICAL_OFFSET + ((FONT_SIZE + 4.0) / 2.0));
-				// Get the minute start position
-				// Round minute to each 5
-				NSInteger minuteStart = [event.startDate dateInformation].minute;
-				minuteStart = round(minuteStart / 5.0) * 5;
-				CGFloat minuteStartPosition = roundf((CGFloat)minuteStart / 60.0f * VERTICAL_DIFF);
-				
-				
-				
-				// Get the hour end position
-				NSInteger hourEnd = [event.endDate dateInformation].hour;
-				if (![event.startDate isSameDay:event.endDate]) {
-					hourEnd = 23;
-				}
-				CGFloat hourEndPosition = roundf((hourEnd * VERTICAL_DIFF) + VERTICAL_OFFSET + ((FONT_SIZE + 4.0) / 2.0));
-				// Get the minute end position
-				// Round minute to each 5
-				NSInteger minuteEnd = [event.endDate dateInformation].minute;
-				if (![event.startDate isSameDay:event.endDate]) {
-					minuteEnd = 55;
-				}
-				minuteEnd = round(minuteEnd / 5.0) * 5;
-				CGFloat minuteEndPosition = roundf((CGFloat)minuteEnd / 60.0f * VERTICAL_DIFF);
-				
-				CGFloat eventHeight = 0.0;
-				
-				eventHeight = (hourEndPosition + minuteEndPosition) - hourStartPosition - minuteStartPosition;
-				if (eventHeight < VERTICAL_DIFF/2) eventHeight = VERTICAL_DIFF/2;
-				
-				//nobre additions - split control and offset control				
-				//split control - adjusts balloon widths so their times/titles don't overlap
-				//offset control - adjusts starting balloon position so you can see all starts/ends
-				if ((hourStartPosition + minuteStartPosition) - startMarker <= VERTICAL_DIFF/2) {				
-					repeatNumber++;
-				}
-				else {
-					repeatNumber = 0;
-					[sameTimeEvents removeAllObjects];
-					//if this event starts before the last event's end, we have to offset it!
-					if (hourStartPosition + minuteStartPosition < endMarker) {
-						horizOffset = EVENT_SAME_HOUR * ++offsetCount;
+
+		// Loop over all the days in the week
+		for (NSInteger i=0; i<(isFiveDayWeek ? 5 : 7); i++) {
+			// Reset offset counters for each new day
+			NSInteger offsetCount = 0;
+			//number of nested appointments
+			NSInteger repeatNumber = 0;
+			//number of pixels to offset horizontally when they are nested
+			CGFloat horizOffset = 0.0f;
+			//starting point to check if they match
+			CGFloat startMarker = 0.0f;
+			CGFloat endMarker = 0.0f;
+			NSDate *displayDay = [_beginningOfWeek dateByAddingDays:i];
+			for (TKCalendarDayEventView *event in self.events) {
+				// Making sure delgate sending date that match current day
+				if ([event.startDate isSameDay:displayDay]) {
+					// Get the hour start position
+					NSInteger hourStart = [event.startDate dateInformation].hour;
+					CGFloat hourStartPosition = roundf((hourStart * VERTICAL_DIFF) + VERTICAL_OFFSET + ((FONT_SIZE + 4.0) / 2.0));
+					// Get the minute start position
+					// Round minute to each 5
+					NSInteger minuteStart = [event.startDate dateInformation].minute;
+					minuteStart = round(minuteStart / 5.0) * 5;
+					CGFloat minuteStartPosition = roundf((CGFloat)minuteStart / 60.0f * VERTICAL_DIFF);
+					
+					
+					
+					// Get the hour end position
+					NSInteger hourEnd = [event.endDate dateInformation].hour;
+					if (![event.startDate isSameDay:event.endDate]) {
+						hourEnd = 23;
+					}
+					CGFloat hourEndPosition = roundf((hourEnd * VERTICAL_DIFF) + VERTICAL_OFFSET + ((FONT_SIZE + 4.0) / 2.0));
+					// Get the minute end position
+					// Round minute to each 5
+					NSInteger minuteEnd = [event.endDate dateInformation].minute;
+					if (![event.startDate isSameDay:event.endDate]) {
+						minuteEnd = 55;
+					}
+					minuteEnd = round(minuteEnd / 5.0) * 5;
+					CGFloat minuteEndPosition = roundf((CGFloat)minuteEnd / 60.0f * VERTICAL_DIFF);
+					
+					CGFloat eventHeight = 0.0;
+					
+					eventHeight = (hourEndPosition + minuteEndPosition) - hourStartPosition - minuteStartPosition;
+					if (eventHeight < VERTICAL_DIFF/2) eventHeight = VERTICAL_DIFF/2;
+					
+					//nobre additions - split control and offset control				
+					//split control - adjusts balloon widths so their times/titles don't overlap
+					//offset control - adjusts starting balloon position so you can see all starts/ends
+					if ((hourStartPosition + minuteStartPosition) - startMarker <= VERTICAL_DIFF/2) {				
+						repeatNumber++;
 					}
 					else {
-						horizOffset = 0.0f;
-						offsetCount = 0;
-					}
-				}				
-				//refresh the markers
-				startMarker = hourStartPosition + minuteStartPosition;				
-				endMarker = hourEndPosition + minuteEndPosition;
-				
-				
-				CGFloat eventWidth = (self.bounds.size.width  - (HORIZONTAL_OFFSET + TIME_WIDTH + PERIOD_WIDTH + HORIZONTAL_LINE_DIFF) - HORIZONTAL_LINE_DIFF - EVENT_HORIZONTAL_DIFF)/(repeatNumber+1);
-				CGFloat eventOriginX = HORIZONTAL_OFFSET + TIME_WIDTH + PERIOD_WIDTH + HORIZONTAL_LINE_DIFF + EVENT_HORIZONTAL_DIFF + horizOffset;
-				CGRect eventFrame = CGRectMake(eventOriginX + (repeatNumber*eventWidth),
-											   hourStartPosition + minuteStartPosition + EVENT_VERTICAL_DIFF,
-											   eventWidth,
-											   eventHeight);
-				
-				event.frame = CGRectIntegral(eventFrame);
-				event.delegate = self;
-				[event setNeedsDisplay];
-				[self.scrollView addSubview:event];
-				
-				for (int i = [sameTimeEvents count]-1; i >= 0; i--) {
-					TKCalendarDayEventView *sameTimeEvent = [sameTimeEvents objectAtIndex:i];
-					CGRect newFrame = sameTimeEvent.frame;
-					newFrame.size.width = eventWidth;
-					newFrame.origin.x = eventOriginX + (i*eventWidth);
-					sameTimeEvent.frame = CGRectIntegral(newFrame);
-				}				
-				[sameTimeEvents addObject:event];
-				// Log the extracted date values
-				NSLog(@"hourStart: %d minuteStart: %d", hourStart, minuteStart);
+						repeatNumber = 0;
+						[sameTimeEvents removeAllObjects];
+						//if this event starts before the last event's end, we have to offset it!
+						if (hourStartPosition + minuteStartPosition < endMarker) {
+							horizOffset = EVENT_SAME_HOUR * ++offsetCount;
+						}
+						else {
+							horizOffset = 0.0f;
+							offsetCount = 0;
+						}
+					}				
+					//refresh the markers
+					startMarker = hourStartPosition + minuteStartPosition;				
+					endMarker = hourEndPosition + minuteEndPosition;
+					
+					// day of week column frame
+					CGRect dayRect = [self getViewRectForDay:i+1];
+					
+					// CGFloat eventWidth = (self.bounds.size.width  - (HORIZONTAL_OFFSET + TIME_WIDTH + PERIOD_WIDTH + HORIZONTAL_LINE_DIFF) - HORIZONTAL_LINE_DIFF - EVENT_HORIZONTAL_DIFF)/(repeatNumber+1);
+					CGFloat eventWidth = dayRect.size.width - (repeatNumber*0.1*eventWidth);
+					// CGFloat eventOriginX = HORIZONTAL_OFFSET + TIME_WIDTH + PERIOD_WIDTH + HORIZONTAL_LINE_DIFF + EVENT_HORIZONTAL_DIFF + horizOffset;
+					CGFloat eventOriginX =  dayRect.origin.x;
+					CGRect eventFrame = CGRectMake(eventOriginX + (repeatNumber*0.1*eventWidth),
+												   hourStartPosition + minuteStartPosition + EVENT_VERTICAL_DIFF,
+												   eventWidth,
+												   eventHeight);
+					
+					event.frame = CGRectIntegral(eventFrame);
+					event.delegate = self;
+					[event setNeedsDisplay];
+					[self.scrollView addSubview:event];
+					
+					for (int i = [sameTimeEvents count]-1; i >= 0; i--) {
+						TKCalendarDayEventView *sameTimeEvent = [sameTimeEvents objectAtIndex:i];
+						CGRect newFrame = sameTimeEvent.frame;
+						newFrame.size.width = eventWidth;
+						// newFrame.origin.x = eventOriginX + (i*eventWidth);
+						sameTimeEvent.frame = CGRectIntegral(newFrame);
+					}				
+					[sameTimeEvents addObject:event];
+					// Log the extracted date values
+					NSLog(@"hourStart: %d minuteStart: %d", hourStart, minuteStart);
+				}
+				// Reset offset counters for each new day
+				[sameTimeEvents removeAllObjects];
+
 			}
 		}
 		[sameTimeEvents release];
@@ -356,7 +450,7 @@
 
 - (UILabel *) monthYear{
 	if(monthYear==nil){
-		monthYear = [[UILabel alloc] initWithFrame:CGRectMake(0, 3, 320, 38)];
+		monthYear = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 320, 28)];
 		monthYear.textAlignment = UITextAlignmentCenter;
 		monthYear.backgroundColor = [UIColor clearColor];
 		monthYear.font = [UIFont boldSystemFontOfSize:19.0f];
@@ -443,7 +537,7 @@
 
 @synthesize times=_times;
 @synthesize periods=_periods;
-@synthesize is24hClock, hourColor;
+@synthesize is24hClock, hourColor, isFiveDayWeek;
 
 #pragma mark -
 #pragma mark Initialisation
@@ -617,7 +711,7 @@
 		
 		// Find noon
 		if (!is24hClock && i == 24/2) {
-			timeRect = CGRectMake(HORIZONTAL_OFFSET, VERTICAL_OFFSET + i * VERTICAL_DIFF, TIME_WIDTH + PERIOD_WIDTH, FONT_SIZE + 4.0);
+			timeRect = CGRectMake(-4, VERTICAL_OFFSET + i * VERTICAL_DIFF, TIME_WIDTH + PERIOD_WIDTH, FONT_SIZE + 4.0);
 		}
 		
 		[time drawInRect:CGRectIntegral(timeRect)
@@ -632,7 +726,7 @@
 			
 			NSString *period = [self.periods objectAtIndex:i];
 			
-			[period drawInRect: CGRectIntegral(CGRectMake(HORIZONTAL_OFFSET + TIME_WIDTH, VERTICAL_OFFSET + i * VERTICAL_DIFF, PERIOD_WIDTH, FONT_SIZE + 4.0)) 
+			[period drawInRect: CGRectIntegral(CGRectMake(HORIZONTAL_OFFSET, PERIOD_VERT_OFFSET + i * VERTICAL_DIFF, PERIOD_WIDTH, FONT_SIZE + 4.0)) 
 					  withFont: periodFont 
 				 lineBreakMode: UILineBreakModeWordWrap 
 					 alignment: UITextAlignmentRight];
@@ -650,13 +744,13 @@
 		CGContextTranslateCTM(context, -0.5, -0.5);
 		
 		CGContextBeginPath(context);
-		CGContextMoveToPoint(context, HORIZONTAL_OFFSET + TIME_WIDTH + PERIOD_WIDTH + HORIZONTAL_LINE_DIFF, VERTICAL_OFFSET + i * VERTICAL_DIFF + roundf((FONT_SIZE + 4.0) / 2.0));
+		CGContextMoveToPoint(context, HORIZONTAL_OFFSET + TIME_WIDTH + HORIZONTAL_LINE_DIFF, VERTICAL_OFFSET + i * VERTICAL_DIFF + roundf((FONT_SIZE + 4.0) / 2.0));
 		CGContextAddLineToPoint(context, self.bounds.size.width, VERTICAL_OFFSET + i * VERTICAL_DIFF + roundf((FONT_SIZE + 4.0) / 2.0));
 		CGContextStrokePath(context);
 		
 		if (i != self.times.count-1) {		
 			CGContextBeginPath(context);
-			CGContextMoveToPoint(context, HORIZONTAL_OFFSET + TIME_WIDTH + PERIOD_WIDTH + HORIZONTAL_LINE_DIFF, VERTICAL_OFFSET + i * VERTICAL_DIFF + roundf((FONT_SIZE + 4.0) / 2.0) + roundf(VERTICAL_DIFF / 2.0));
+			CGContextMoveToPoint(context, HORIZONTAL_OFFSET + TIME_WIDTH + HORIZONTAL_LINE_DIFF, VERTICAL_OFFSET + i * VERTICAL_DIFF + roundf((FONT_SIZE + 4.0) / 2.0) + roundf(VERTICAL_DIFF / 2.0));
 			CGContextAddLineToPoint(context, self.bounds.size.width, VERTICAL_OFFSET + i * VERTICAL_DIFF + roundf((FONT_SIZE + 4.0) / 2.0) + roundf(VERTICAL_DIFF / 2.0));
 			CGFloat dash1[] = {2.0, 1.0};
 			CGContextSetLineDash(context, 0.0, dash1, 2);
@@ -666,9 +760,38 @@
 		// Restore the context state
 		CGContextRestoreGState(context);
 		
-		
-		
 	}
+	
+	// Draw vertical lines
+	CGContextRef context = UIGraphicsGetCurrentContext();
+	// Save the context state 
+	CGContextSaveGState(context);
+	// Draw line with a black stroke color
+	CGContextSetStrokeColorWithColor(context, [[UIColor grayColor] CGColor]);
+	// Draw line with a 1.0 stroke width
+	CGContextSetLineWidth(context, 0.5);
+	// Translate context for clear line
+	CGContextTranslateCTM(context, -0.5, -0.5);
+
+	// Stroke either six or four vertical lines
+	for (NSInteger i=1; i<(isFiveDayWeek ? 5 : 7); i++) {
+		CGContextBeginPath(context);
+		CGRect dayRect = [self getViewRectForDay:i];
+		CGContextMoveToPoint(context,    CGRectGetMaxX(dayRect), 0.0);
+		CGContextAddLineToPoint(context, CGRectGetMaxX(dayRect), self.bounds.size.height);
+		CGContextStrokePath(context);		
+	}
+	// Restore the context state
+	CGContextRestoreGState(context);
+	
+	
+}
+
+- (CGRect) getViewRectForDay:(int)day {
+	// For gregorian day index, return view rect
+	float weekday_width = (self.bounds.size.width - HORIZONTAL_OFFSET - TIME_WIDTH) / (isFiveDayWeek ? 5 : 7);
+
+	return CGRectMake(HORIZONTAL_OFFSET + TIME_WIDTH + (day-1)*weekday_width, 0.0, weekday_width, self.bounds.size.height);
 }
 
 #pragma mark -

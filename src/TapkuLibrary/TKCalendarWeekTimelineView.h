@@ -41,15 +41,19 @@
 	
 	NSArray *_events;
 	NSDate *_currentDay;
+	NSDate *_beginningOfWeek;
 	
 	id <TKCalendarWeekTimelineViewDelegate> _delegate;
 	UIColor *timelineColor;
 	UIColor *hourColor;
 	BOOL is24hClock;
+	BOOL isFirstDayMonday;
+	BOOL isFiveDayWeek;
 	//montagem da barra superior de seleção de dias 
 	UIButton *leftArrow, *rightArrow;
 	UIImageView *topBackground, *shadow;
 	UILabel *monthYear;	
+	UILabel *day1, *day2, *day3, *day4, *day5, *day6, *day7;
 }
 
 @property (nonatomic, readonly) UIScrollView *scrollView;
@@ -63,9 +67,13 @@
 @property (nonatomic, retain) UIColor *timelineColor;
 @property (nonatomic, retain) UIColor *hourColor;
 @property (nonatomic) BOOL is24hClock;
+@property (nonatomic) BOOL isFiveDayWeek;
 
 // Initialisation
 - (void)setupCustomInitialisation;
+- (void) addSubviewDayLabels;
+- (UILabel *) dayLabel:(UILabel *)uilabel inRect:(CGRect)r;
+- (CGRect) getViewRectForDay:(int)day;
 
 // Reload Day
 - (void)reloadDay;
@@ -87,6 +95,7 @@
 	NSArray *_times;
 	NSArray *_periods;
 	BOOL is24hClock;
+	BOOL isFiveDayWeek;
 	UIColor *hourColor;	
 }
 
@@ -94,8 +103,10 @@
 @property (nonatomic, readonly) NSArray *periods;
 @property (nonatomic, retain) UIColor *hourColor;
 @property (nonatomic) BOOL is24hClock;
+@property (nonatomic) BOOL isFiveDayWeek;
 
 // Initialisation
 - (void)setupCustomInitialisation;
+- (CGRect) getViewRectForDay:(int)day;
 
 @end

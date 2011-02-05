@@ -60,7 +60,7 @@
 	
 	
 	
-	rows = [NSArray arrayWithObjects:@"Coverflow",@"Graph",@"Month Grid Calendar",nil];
+	rows = [NSArray arrayWithObjects:@"Coverflow",@"Graph",@"Month Grid Calendar",@"Weekly Calendar",nil];
 	d = [NSDictionary dictionaryWithObjectsAndKeys:rows,@"rows",@"Views",@"title",nil];
 	[data addObject:d];
 	
@@ -132,10 +132,10 @@
 	}
 	
 	if(s==0&&r==2)
-		vc = [[TKCalendarWeekViewController alloc] init];		// [[DemoCalendarMonth alloc] initWithSunday:YES];
-
+		vc = [[DemoCalendarMonth alloc] initWithSunday:YES];
 	
-	
+	else if(s==0&&r==3)
+		vc = [[TKCalendarWeekViewController alloc] init];		// Testing weekly view
 	
 	else if(s==1 && r==0)
 		vc = [[EmptyViewController alloc] init];

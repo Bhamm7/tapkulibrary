@@ -55,26 +55,42 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
 	
+	// self.calendarWeekTimelineView.isFiveDayWeek = YES;
 	[self.view addSubview:self.calendarWeekTimelineView];
 }
 
 
 - (NSArray *)calendarWeekTimelineView:(TKCalendarWeekTimelineView*)calendarWeekTimeline eventsForDate:(NSDate *)eventDate{
 	TKCalendarDayEventView *eventViewFirst = [TKCalendarDayEventView eventViewWithFrame:CGRectZero
-																		 id:nil 
-																  startDate:[[NSDate date]addTimeInterval:60 * 60 * 2] 
-																	endDate:[[NSDate date]addTimeInterval:60 * 60 * 24]
-																	  title:@"First"
-																   location:@"Test Location"];
+																					 id:nil 
+																			  startDate:[[NSDate date]addTimeInterval:60 * 60 * 2] 
+																				endDate:[[NSDate date]addTimeInterval:60 * 60 * 24]
+																				  title:@"First"
+																			   location:@"Test of the new 5 or 7 day cal"];
 	
 	TKCalendarDayEventView *eventViewSecond = [TKCalendarDayEventView eventViewWithFrame:CGRectZero
-																				  id:nil
-															 			   startDate:[NSDate date] 
-																			 endDate:[NSDate date]
-																			   title:@"Second ultra mega hypra long text to test again with more"
-																		    location:nil];
+																					 id:nil 
+																			  startDate:[[NSDate date]addTimeInterval:-60 * 60 * 24 * 2] 
+																				endDate:[[NSDate date]addTimeInterval:-60 * 60 * 24 * 24]
+																				  title:@"2nd"
+																			   location:@"Test of the new 5 or 7 day cal"];
 	
-	return [NSArray arrayWithObjects:eventViewFirst, eventViewSecond, nil];
+	TKCalendarDayEventView *eventViewThird = [TKCalendarDayEventView eventViewWithFrame:CGRectZero
+																					  id:nil
+																			   startDate:[NSDate date] 
+																				 endDate:[NSDate date]
+																				   title:@"3rd ultra mega hypra long text to test again with more"
+																				location:nil];
+	
+	TKCalendarDayEventView *eventViewFourth = [TKCalendarDayEventView eventViewWithFrame:CGRectZero
+																					  id:nil 
+																			   startDate:[[NSDate date]addTimeInterval:-60 * 60 * 36 * 2] 
+																				 endDate:[[NSDate date]addTimeInterval:-60 * 60 * 36 * 24]
+																				   title:@"Last"
+																				location:@"Test of the new 5 or 7 day cal"];
+	
+	
+	return [NSArray arrayWithObjects:eventViewFirst, eventViewSecond, eventViewThird, eventViewFourth, nil];
 }
 - (void)calendarWeekTimelineView:(TKCalendarWeekTimelineView*)calendarWeekTimeline eventViewWasSelected:(TKCalendarDayEventView *)eventView{
 	NSLog(@"CalendarWeekTimelineView: EventViewWasSelected");
