@@ -120,6 +120,8 @@
 	[self addObserver:self forKeyPath: @"currentDay"
 					 options:0
 					 context:@selector(reloadDay)];
+	
+	[self setupGestureRecognition];
 }
 
 
@@ -208,6 +210,25 @@
 
 -(void)setIsFiveDayWeek:(BOOL)aIsFiveDayWeek {
 	_timelineView.isFiveDayWeek = aIsFiveDayWeek;
+	isFiveDayWeek = aIsFiveDayWeek;
+	
+	// Update day labels
+	for (NSInteger i=1; i<=7; i++) {
+		CGRect dayLabelRect = [self getViewRectForDay:i];
+		dayLabelRect.origin.y = 30.0;
+		dayLabelRect.size.height = 15.0;
+		if (i==1) { day1.frame = dayLabelRect; }
+		if (i==2) { day2.frame = dayLabelRect; }
+		if (i==3) { day3.frame = dayLabelRect; }
+		if (i==4) { day4.frame = dayLabelRect; }
+		if (i==5) { day5.frame = dayLabelRect; }
+		if (i==6) { day6.frame = dayLabelRect; }
+		if (i==7) { day7.frame = dayLabelRect; }
+	}
+	
+	// Redraw timeline view
+	[self reloadDay];
+	[self.timelineView setNeedsDisplay];
 }
 
 #pragma mark -
@@ -421,6 +442,7 @@
 	CGPoint pointInTimeLine = CGPointZero;
 	if (view == _timelineView) {
 		pointInTimeLine = tapPoint;
+		self.isFiveDayWeek = !self.isFiveDayWeek;
 		NSLog(@"Double Tapped TimelineView at point %@ and date %@", NSStringFromCGPoint(pointInTimeLine), [self getTimeAndDayFromPoint:pointInTimeLine]);
 	}
 	else {
@@ -440,6 +462,37 @@
 			selectedDay = [self.beginningOfWeek dateByAddingDays:i];	
 	return [NSDate dateWithDatePart:selectedDay andTimePart:[self getTimeFromOffset:tapPoint.y]];
 }
+
+#pragma mark -
+#pragma mark Swipe Detection
+
+- (void) setupGestureRecognition {
+	// Attached UIGesture recognizers to the timeLineView
+	UISwipeGestureRecognizer *recognizer;
+    
+    recognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(nextWeek:)];
+	recognizer.direction = UISwipeGestureRecognizerDirectionRight;	// default
+    [self.timelineView addGestureRecognizer:recognizer];
+    recognizer.delegate = self;
+    [recognizer release];
+	
+    recognizer = [[UISwipeGestureRecognizer alloc] initWithTarget:self action:@selector(previousWeek:)];
+	recognizer.direction = UISwipeGestureRecognizerDirectionLeft;
+    [self.timelineView addGestureRecognizer:recognizer];
+    recognizer.delegate = self;
+    [recognizer release];
+	
+}
+
+- (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
+	
+    // Disallow recognition of tap gestures in the segmented control.
+    if ((touch.view == self.timelineView)) {
+        return YES;
+    }
+    return NO;
+}
+
 
 #pragma mark -
 #pragma mark Drawing
@@ -782,7 +835,7 @@
 	CGContextTranslateCTM(context, -0.5, -0.5);
 
 	// Stroke either six or four vertical lines
-	for (NSInteger i=1; i<(isFiveDayWeek ? 5 : 7); i++) {
+	for (NSInteger i=1; i<(self.isFiveDayWeek ? 5 : 7); i++) {
 		CGContextBeginPath(context);
 		CGRect dayRect = [self getViewRectForDay:i];
 		CGContextMoveToPoint(context,    CGRectGetMaxX(dayRect), 0.0);
@@ -797,7 +850,7 @@
 
 - (CGRect) getViewRectForDay:(int)day {
 	// For gregorian day index, return view rect
-	float weekday_width = (self.bounds.size.width - HORIZONTAL_OFFSET - TIME_WIDTH) / (isFiveDayWeek ? 5 : 7);
+	float weekday_width = (self.bounds.size.width - HORIZONTAL_OFFSET - TIME_WIDTH) / (self.isFiveDayWeek ? 5 : 7);
 
 	return CGRectMake(HORIZONTAL_OFFSET + TIME_WIDTH + (day-1)*weekday_width, 0.0, weekday_width, self.bounds.size.height);
 }

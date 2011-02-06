@@ -35,7 +35,7 @@
 
 @class TKTimelineWeekView;
 
-@interface TKCalendarWeekTimelineView : UIView <TapDetectingViewDelegate>{
+@interface TKCalendarWeekTimelineView : UIView <TapDetectingViewDelegate,UIGestureRecognizerDelegate> {
 	UIScrollView *_scrollView;
 	TKTimelineWeekView *_timelineView;
 	
@@ -76,6 +76,7 @@
 - (UILabel *) dayLabel:(UILabel *)uilabel inRect:(CGRect)r;
 - (CGRect) getViewRectForDay:(int)day;
 - (NSDate*)getTimeAndDayFromPoint:(CGPoint)tapPoint;
+- (void) setupGestureRecognition;
 
 // Reload Day
 - (void)reloadDay;

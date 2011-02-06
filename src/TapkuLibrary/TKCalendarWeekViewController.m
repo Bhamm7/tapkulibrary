@@ -55,7 +55,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
 	
-	// self.calendarWeekTimelineView.isFiveDayWeek = YES;
+	self.calendarWeekTimelineView.isFiveDayWeek = YES;
 	[self.view addSubview:self.calendarWeekTimelineView];
 }
 
