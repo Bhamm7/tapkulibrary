@@ -146,7 +146,7 @@
 	// TODO: Not very DRY, method repeated in _timelineView
 	float weekday_width = (self.bounds.size.width - HORIZONTAL_OFFSET - TIME_WIDTH) / (isFiveDayWeek ? 5 : 7);
 	
-	return CGRectMake(HORIZONTAL_OFFSET + TIME_WIDTH + (day-1)*weekday_width, 0.0, weekday_width, self.bounds.size.height);
+	return CGRectMake(HORIZONTAL_OFFSET + TIME_WIDTH + (day-1)*weekday_width, 0.0, weekday_width, self.timelineView.bounds.size.height);
 }
 
 - (UILabel *) dayLabel:(UILabel *)uilabel inRect:(CGRect)r {
@@ -285,7 +285,7 @@
 	NSDateComponents *components = [gregorian components: (NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit)
 												fromDate: self.beginningOfWeek];
 	self.beginningOfWeek = [gregorian dateFromComponents: components];
-
+	
 	// Set up day labels
 	[format setDateFormat:@"EEE dd"];
 	day1.text = [format stringFromDate:self.beginningOfWeek];
@@ -329,9 +329,7 @@
 					NSInteger minuteStart = [event.startDate dateInformation].minute;
 					minuteStart = round(minuteStart / 5.0) * 5;
 					CGFloat minuteStartPosition = roundf((CGFloat)minuteStart / 60.0f * VERTICAL_DIFF);
-					
-					
-					
+										
 					// Get the hour end position
 					NSInteger hourEnd = [event.endDate dateInformation].hour;
 					if (![event.startDate isSameDay:event.endDate]) {
@@ -377,9 +375,7 @@
 					// day of week column frame
 					CGRect dayRect = [self getViewRectForDay:i+1];
 					
-					// CGFloat eventWidth = (self.bounds.size.width  - (HORIZONTAL_OFFSET + TIME_WIDTH + PERIOD_WIDTH + HORIZONTAL_LINE_DIFF) - HORIZONTAL_LINE_DIFF - EVENT_HORIZONTAL_DIFF)/(repeatNumber+1);
-					CGFloat eventWidth = dayRect.size.width - (repeatNumber*0.1*eventWidth);
-					// CGFloat eventOriginX = HORIZONTAL_OFFSET + TIME_WIDTH + PERIOD_WIDTH + HORIZONTAL_LINE_DIFF + EVENT_HORIZONTAL_DIFF + horizOffset;
+					CGFloat eventWidth = dayRect.size.width - (repeatNumber*0.1*dayRect.size.width);
 					CGFloat eventOriginX =  dayRect.origin.x;
 					CGRect eventFrame = CGRectMake(eventOriginX + (repeatNumber*0.1*eventWidth),
 												   hourStartPosition + minuteStartPosition + EVENT_VERTICAL_DIFF,
@@ -414,7 +410,7 @@
 #pragma mark -
 #pragma mark Tap Detecting View
 
--(NSDate*)getTimeFromOffset:(CGFloat)offset {
+-(NSTimeInterval)getSecondsFromOffset:(CGFloat)offset {
 	CGFloat hora = (offset - VERTICAL_OFFSET)/VERTICAL_DIFF;
 	NSInteger intHour = (int)hora;
 	CGFloat minutePart = hora-intHour;
@@ -422,11 +418,7 @@
 	if (minutePart > 0.5) {
 		intMinute = 30;		
 	}
-	NSDateFormatter *format = [[NSDateFormatter alloc]init];
-	[format setDateFormat:@"HH:mm"];
-	NSDate *timeTapped = [format dateFromString:[NSString stringWithFormat:@"%i:%i", intHour, intMinute]];
-	[format release];
-	return [NSDate dateWithDatePart:self.beginningOfWeek andTimePart:timeTapped];
+	return (NSTimeInterval)(intHour*60*60 + intMinute*60);
 }
 
 - (void)tapDetectingView:(TapDetectingView *)view gotSingleTapAtPoint:(CGPoint)tapPoint
@@ -443,7 +435,11 @@
 	if (view == _timelineView) {
 		pointInTimeLine = tapPoint;
 		self.isFiveDayWeek = !self.isFiveDayWeek;
-		NSLog(@"Double Tapped TimelineView at point %@ and date %@", NSStringFromCGPoint(pointInTimeLine), [self getTimeAndDayFromPoint:pointInTimeLine]);
+		NSDateFormatter *format = [[NSDateFormatter alloc]init];
+		[format setDateFormat:@"MMM dd yyyy hh:mm"];	
+		NSLog(@"Double Tapped TimelineView at date %@",[format stringFromDate:[self getTimeAndDayFromPoint:pointInTimeLine]]);
+		NSLog(@"Double Tapped TimelineView at point %@", NSStringFromCGPoint(pointInTimeLine));
+		[format release];
 	}
 	else {
 		pointInTimeLine = [view convertPoint:tapPoint toView:self.scrollView];
@@ -460,7 +456,8 @@
 	for (NSInteger i=0; i<(isFiveDayWeek ? 5 : 7); i++)
 		if (CGRectContainsPoint([self getViewRectForDay:i+1],tapPoint)) 
 			selectedDay = [self.beginningOfWeek dateByAddingDays:i];	
-	return [NSDate dateWithDatePart:selectedDay andTimePart:[self getTimeFromOffset:tapPoint.y]];
+	
+	return [selectedDay dateByAddingTimeInterval:[self getSecondsFromOffset:tapPoint.y]];
 }
 
 #pragma mark -
@@ -486,7 +483,7 @@
 
 - (BOOL)gestureRecognizer:(UIGestureRecognizer *)gestureRecognizer shouldReceiveTouch:(UITouch *)touch {
 	
-    // Disallow recognition of tap gestures in the segmented control.
+    // If gesture was within bounds of timelineView then allow
     if ((touch.view == self.timelineView)) {
         return YES;
     }
@@ -587,6 +584,14 @@
 	[topBackground release];
 	[shadow release];
 	[monthYear release];
+	
+	[day1 release];
+	[day2 release];
+	[day3 release];
+	[day4 release];
+	[day5 release];
+	[day6 release];
+	[day7 release];
 	
     [super dealloc];
 }
